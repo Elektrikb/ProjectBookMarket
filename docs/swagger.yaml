@@ -1,0 +1,493 @@
+definitions:
+  models.ErrorResponse:
+    properties:
+      code:
+        description: Код ошибки, например, 400 или 500
+        type: integer
+      message:
+        description: Сообщение об ошибке
+        type: string
+    type: object
+  models.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Order:
+    properties:
+      order_id:
+        type: integer
+      products:
+        items:
+          $ref: '#/definitions/models.OrderProduct'
+        type: array
+      user_id:
+        type: integer
+    type: object
+  models.OrderProduct:
+    properties:
+      order_id:
+        type: integer
+      product:
+        $ref: '#/definitions/models.Product'
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  models.Product:
+    properties:
+      category_id:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      manufacturer:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      rating:
+        type: number
+    type: object
+  models.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  services.Book:
+    properties:
+      author:
+        type: string
+      id:
+        type: integer
+      publisher:
+        type: integer
+      title:
+        type: string
+      year:
+        type: integer
+    type: object
+  services.Credentials:
+    properties:
+      password:
+        type: string
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Документация моего API
+  title: Документация для API
+  version: "1.0"
+paths:
+  /books:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список книг с фильтрацией, сортировкой и пагинацией,
+        с тайм-аутом на выполнение запроса.
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество книг на странице
+        in: query
+        name: limit
+        type: integer
+      - default: id
+        description: Поле для сортировки
+        in: query
+        name: sort
+        type: string
+      - default: asc
+        description: Порядок сортировки
+        in: query
+        name: order
+        type: string
+      - description: Название книги
+        in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'total": int64, "page": int, "limit": int}'
+          schema:
+            $ref: '#/definitions/services.Book'
+        "408":
+          description: Request timed out"}
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Failed to fetch books"}
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Получение книг с тайм-аутом
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: Создает новую книгу на основе переданных данных.
+      parameters:
+      - description: Данные книги
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/services.Book'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/services.Book'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Создание новой книги
+      tags:
+      - books
+  /books/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет книгу с указанным идентификатором.
+      parameters:
+      - description: Идентификатор книги
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Book deleted
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Book not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Удаление книги по ID
+      tags:
+      - books
+    get:
+      consumes:
+      - application/json
+      description: Возвращает книгу с указанным идентификатором.
+      parameters:
+      - description: Идентификатор книги
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.Book'
+        "404":
+          description: Book not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Получение книги по ID
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные книги с указанным идентификатором на основе переданных
+        данных.
+      parameters:
+      - description: Идентификатор книги
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные книги
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/services.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.Book'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Book not found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обновление книги по ID
+      tags:
+      - books
+  /books/authors/count:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество книг для каждого автора в базе данных.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Количество книг по каждому автору
+          schema:
+            items:
+              $ref: '#/definitions/models.Order'
+            type: array
+      summary: Подсчет книг по авторам
+      tags:
+      - books
+  /books/publisher:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет издателя для всех книг в базе данных.
+      parameters:
+      - description: Имя издателя
+        in: query
+        name: publisher
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Publisher updated successfully
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "500":
+          description: Error updating publisher
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обновление издателя для всех книг
+      tags:
+      - books
+  /generate-token:
+    post:
+      description: Создает JWT-токен с именем пользователя и ролью, срок действия
+        токена составляет 5 минут.
+      parameters:
+      - description: Имя пользователя
+        in: query
+        name: username
+        required: true
+        type: string
+      - description: Роль пользователя
+        in: query
+        name: role
+        required: true
+        type: string
+      responses:
+        "200":
+          description: JWT token
+          schema:
+            type: string
+        "500":
+          description: Failed to generate token
+          schema:
+            type: string
+      summary: Генерация JWT-токена
+      tags:
+      - authentication
+  /handle-error:
+    post:
+      description: Возвращает JSON-ответ с указанным кодом состояния и сообщением
+        об ошибке.
+      parameters:
+      - description: Код состояния HTTP
+        in: query
+        name: statusCode
+        required: true
+        type: integer
+      - description: Сообщение об ошибке
+        in: query
+        name: message
+        required: true
+        type: string
+      responses:
+        "200":
+          description: error message
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обработка ошибок
+      tags:
+      - error handling
+  /initdb:
+    post:
+      description: Устанавливает соединение с базой данных и выполняет миграцию для
+        модели Book.
+      responses:
+        "200":
+          description: Database initialized successfully
+          schema:
+            type: string
+        "500":
+          description: Failed to connect to database
+          schema:
+            type: string
+      summary: Инициализация базы данных
+      tags:
+      - database
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет учетные данные пользователя и возвращает токен при успешной
+        аутентификации.
+      parameters:
+      - description: Учетные данные пользователя
+        in: body
+        name: creds
+        required: true
+        schema:
+          $ref: '#/definitions/services.Credentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: токен доступа
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: could not create token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Аутентификация пользователя
+  /protected-route:
+    get:
+      consumes:
+      - application/json
+      description: Middleware для проверки JWT токена в заголовке Authorization.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Проверка токена авторизации
+      tags:
+      - auth
+  /protected-route/{requiredRole}:
+    get:
+      consumes:
+      - application/json
+      description: Middleware для проверки роли пользователя на основе JWT токена.
+      parameters:
+      - description: Необходимая роль для доступа
+        in: path
+        name: requiredRole
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Проверка роли пользователя
+      tags:
+      - auth
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Middleware для обновления JWT токена, если он истек.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: новый токен
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: token not expired enough
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: could not create token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обновление токена авторизации
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Обрабатывает запрос на регистрацию, проверяет данные и сохраняет
+        пользователя.
+      parameters:
+      - description: Данные для регистрации пользователя
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/services.Credentials'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: user registered successfully
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: user already exists
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
+swagger: "2.0"
